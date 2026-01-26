@@ -160,41 +160,6 @@ def get_bundle_indexes_from_allocation_matrix(X: type[np.ndarray], agent_index: 
     return bundle_indexes
 
 
-def find_agent(
-    X: type[np.ndarray],
-    agents: list[BaseAgent],
-    items: list[ScheduleItem],
-    current_item_index: int,
-    last_item_index: int,
-):
-    """Find agent willing to do the exchange.
-
-    Find index of an agent that is currently willing to exchange a current item for a certain other item.
-    This will depend on their current bundle, for which the allocation matrix is needed.
-
-    Args:
-        X (type[np.ndarray]): allocation matrix
-        agents (list[BaseAgent]): List of agents from class BaseAgent
-        items (list[ScheduleItem]): List of items from class BaseItem
-        current_item_index (int): index of the item that we want to exchange
-        last_item_index (int): index of the item that we want to exchange current item for
-
-    Returns:
-        item: index of the agent williing to do the exchange
-    """
-    owners = get_owners_list(X, current_item_index)
-    for owner in owners:
-        agent = agents[owner]
-        bundle = get_bundle_from_allocation_matrix(X, items, owner)
-        if agent.exchange_contribution(
-            bundle, items[current_item_index], items[last_item_index]
-        ):
-            return owner
-    print(
-        "Agent not found"
-    )  # this should never happen. If the item was in the path, then someone must be willing to exchange it
-
-
 """Update allocation after finding the shortest path in exchange graph"""
 
 
@@ -287,7 +252,6 @@ def add_agent_to_exchange_graph(
     items: list[ScheduleItem],
     agent_picked: int,
     valuations,
-    weight_factor: float,
 ):
     """Add picked agent to the exchange graph.
 
@@ -311,13 +275,12 @@ def add_agent_to_exchange_graph(
         if (
             g not in bundle
             and agents[agent_picked].marginal_contribution(bundle, g) == 1
-            and g.capacity > 0
         ):
             if valuations is None:
                 exchange_graph.add_edge("s", i, weight=1)
             else:
                 exchange_graph.add_edge(
-                    "s", i, weight=1 - weight_factor * valuations[agent_picked, i]
+                    "s", i, weight=(8 - valuations[agent_picked, i]) * len(items)
                 )
     return exchange_graph
 
@@ -331,8 +294,6 @@ def update_exchange_graph_E(
     path_og: list[int],
     agents_involved: list[int],
     valuations,
-    only_ties,
-    weight_factor: float,
 ):
     """Update the exchange graph and edge matrix after the transfers made.
 
@@ -380,30 +341,12 @@ def update_exchange_graph_E(
                         if agent.exchange_contribution(
                             agent_bundle_items, item1, item2
                         ):
-                            edge_matrix[item1_idx][item2_idx].append(agent_index)
-                            if valuations is not None:
-                                edge_matrix[item1_idx][item2_idx].sort(
-                                    key=lambda x: valuations[x, item2_idx]
-                                    - valuations[x, item1_idx],
-                                    reverse=True,
-                                )
-                                first_agent = edge_matrix[item1_idx][item2_idx][0]
-                                weight = 1 - weight_factor * (
-                                    valuations[first_agent, item2_idx]
-                                    - valuations[first_agent, item1_idx]
-                                )
-                            else:
-                                weight = 1
-                            if exchange_graph.has_edge(item1_idx, item2_idx):
-                                if not only_ties or weight <= 1:
-                                    exchange_graph[item1_idx][item2_idx][
-                                        "weight"
-                                    ] = weight
-                            else:
-                                exchange_graph.add_edge(
-                                    item1_idx, item2_idx, weight=weight
-                                )
-
+                            if valuations is None or (
+                                valuations[agent_index, item1_idx]
+                                == valuations[agent_index, item2_idx]
+                            ):
+                                edge_matrix[item1_idx][item2_idx].append(agent_index)
+                                exchange_graph.add_edge(item1_idx, item2_idx, weight=1)
     return exchange_graph, edge_matrix
 
 
@@ -489,33 +432,37 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
     Returns:
          X (type[np.ndarray]): allocation matrix
     """
-    players = list(range(len(agents)))
+    n=len(agents)
+    players = list(range(n))
     X = initialize_allocation_matrix(items, agents)
+    gain_vector = np.zeros([n])
     while len(players) > 0:
-        for player in players:
-            val = 0
-            current_item = []
-            agent = agents[player]
-            desired_items = agent.get_desired_items_indexes(items)
-            bundle = get_bundle_from_allocation_matrix(X, items, player)
-            for item in desired_items:
-                if X[item, len(agents)] > 0:
-                    if valuations is None:
-                        current_val = agent.marginal_contribution(bundle, items[item])
-                    else:
-                        current_val = (
-                            agent.marginal_contribution(bundle, items[item])
-                            * valuations[player, item]
-                        )
-                    if current_val > val:
-                        current_item.clear()
-                        current_item.append(item)
-                        val = current_val
-            if len(current_item) > 0:
-                X[current_item[0], player] = 1
-                X[current_item[0], len(agents)] -= 1
-            else:
-                players.remove(player)
+        player = np.argmax(gain_vector)
+        val = 0
+        current_item = []
+        agent = agents[player]
+        desired_items = agent.get_desired_items_indexes(items)
+        bundle = get_bundle_from_allocation_matrix(X, items, player)
+        for item in desired_items:
+            if X[item, len(agents)] > 0:
+                if valuations is None:
+                    current_val = agent.marginal_contribution(bundle, items[item])
+                else:
+                    current_val = (
+                        agent.marginal_contribution(bundle, items[item])
+                        * valuations[player, item]
+                    )
+                if current_val > val:
+                    current_item.clear()
+                    current_item.append(item)
+                    val = current_val
+        if len(current_item) > 0:
+            X[current_item[0], player] = 1
+            X[current_item[0], len(agents)] -= 1
+            gain_vector[player] = get_gain_function(X, agents, items, player, criteria="LorenzDominance", weights=[])
+        else:
+            players.remove(player)
+            gain_vector[player] = float("-inf")
     return X
 
 
@@ -569,8 +516,6 @@ def general_yankee_swap_E(
     weights: list = [],
     plot_exchange_graph: bool = False,
     valuations=None,
-    only_ties=False,
-    weight_factor=1e-6,
 ):
     """General Yankee swap allocation algorithm, edge matrix version.
 
@@ -604,7 +549,7 @@ def general_yankee_swap_E(
         count += 1
         agent_picked = np.argmax(gain_vector)
         exchange_graph = add_agent_to_exchange_graph(
-            X, exchange_graph, agents, items, agent_picked, valuations, weight_factor
+            X, exchange_graph, agents, items, agent_picked, valuations
         )
         if plot_exchange_graph:
             nx.draw(exchange_graph, with_labels=True)
@@ -633,8 +578,6 @@ def general_yankee_swap_E(
                 path,
                 agents_involved,
                 valuations,
-                only_ties,
-                weight_factor,
             )
             gain_vector[agent_picked] = get_gain_function(
                 X, agents, items, agent_picked, criteria, weights
