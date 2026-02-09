@@ -159,42 +159,6 @@ def get_bundle_indexes_from_allocation_matrix(X: type[np.ndarray], agent_index: 
             bundle_indexes.append(i)
     return bundle_indexes
 
-
-def find_agent(
-    X: type[np.ndarray],
-    agents: list[BaseAgent],
-    items: list[ScheduleItem],
-    current_item_index: int,
-    last_item_index: int,
-):
-    """Find agent willing to do the exchange.
-
-    Find index of an agent that is currently willing to exchange a current item for a certain other item.
-    This will depend on their current bundle, for which the allocation matrix is needed.
-
-    Args:
-        X (type[np.ndarray]): allocation matrix
-        agents (list[BaseAgent]): List of agents from class BaseAgent
-        items (list[ScheduleItem]): List of items from class BaseItem
-        current_item_index (int): index of the item that we want to exchange
-        last_item_index (int): index of the item that we want to exchange current item for
-
-    Returns:
-        item: index of the agent williing to do the exchange
-    """
-    owners = get_owners_list(X, current_item_index)
-    for owner in owners:
-        agent = agents[owner]
-        bundle = get_bundle_from_allocation_matrix(X, items, owner)
-        if agent.exchange_contribution(
-            bundle, items[current_item_index], items[last_item_index]
-        ):
-            return owner
-    print(
-        "Agent not found"
-    )  # this should never happen. If the item was in the path, then someone must be willing to exchange it
-
-
 """Update allocation after finding the shortest path in exchange graph"""
 
 
