@@ -432,7 +432,7 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
     Returns:
          X (type[np.ndarray]): allocation matrix
     """
-    n=len(agents)
+    n = len(agents)
     players = list(range(n))
     X = initialize_allocation_matrix(items, agents)
     gain_vector = np.zeros([n])
@@ -459,7 +459,9 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
         if len(current_item) > 0:
             X[current_item[0], player] = 1
             X[current_item[0], len(agents)] -= 1
-            gain_vector[player] = get_gain_function(X, agents, items, player, criteria="LorenzDominance", weights=[])
+            gain_vector[player] = get_gain_function(
+                X, agents, items, player, criteria="LorenzDominance", weights=[]
+            )
         else:
             players.remove(player)
             gain_vector[player] = float("-inf")

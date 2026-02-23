@@ -73,6 +73,39 @@ def nash_welfare(
     return num_zeros, np.exp(util / (len(agents) - num_zeros))
 
 
+def first_preference_count(
+    X: np.ndarray,
+    valuations: np.ndarray,
+) -> int:
+    """
+    Returns number of agents who received at least one
+    item with maximal valuation.
+    """
+
+    num_agents = valuations.shape[0]
+
+    # Highest valuation per agent
+    max_vals = valuations.max(axis=1)  # shape (num_agents,)
+
+    count = 0
+
+    for i in range(num_agents):
+        # Items assigned to agent i
+        assigned_items = X[:, i] == 1
+
+        if not np.any(assigned_items):
+            continue
+
+        # Values of assigned items
+        assigned_values = valuations[i, assigned_items]
+
+        # Did they receive a max-valued item?
+        if np.any(assigned_values == max_vals[i]):
+            count += 1
+
+    return count
+
+
 def leximin(X: type[np.ndarray], agents: list[BaseAgent], items: list[ScheduleItem]):
     """Compute Leximin vector, i.e. vector with agents utilities, sorted in decreasing order
 
