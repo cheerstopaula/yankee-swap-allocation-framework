@@ -75,7 +75,7 @@ def EF_violations_reponses(
         orig_students = [agents[agent_idx].student]
         c_small_ilp = valuations[agent_idx]
 
-        schedule_copy = copy.deepcopy(items)
+        schedule_copy = [copy.copy(item) for item in items]
         for item_idx, item in enumerate(schedule_copy):
             item.capacity = int(X[item_idx, bundle_owner_idx] == 1)
 
