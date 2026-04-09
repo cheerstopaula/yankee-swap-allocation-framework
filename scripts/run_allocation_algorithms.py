@@ -4,7 +4,7 @@ from collections import defaultdict
 import pandas as pd
 
 from fair.agent import LegacyStudent
-from fair.allocation import general_yankee_swap_E, round_robin, serial_dictatorship
+from fair.allocation import yankee_swap, round_robin, serial_dictatorship
 from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from fair.envy import (
     EF_violations,
@@ -87,7 +87,7 @@ for i in range(NUM_STUDENTS):
     )
     students.append(legacy_student)
 
-X_YS, _, _ = general_yankee_swap_E(students, schedule)
+X_YS, _, _ = yankee_swap(students, schedule)
 print("YS utilitarian welfare: ", utilitarian_welfare(X_YS, students, schedule))
 print("YS nash welfare: ", nash_welfare(X_YS, students, schedule))
 print("YS leximin vector: ", leximin((X_YS), students, schedule))

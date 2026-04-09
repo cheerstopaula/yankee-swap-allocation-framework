@@ -1,7 +1,5 @@
 import copy
-
 import numpy as np
-
 from .agent import BaseAgent, LegacyStudent
 from .allocation import yankee_swap, get_bundle_from_allocation_matrix
 from .constraint import CourseTimeConstraint, MutualExclusivityConstraint

@@ -1,7 +1,5 @@
 import time
 import copy
-from queue import Queue
-
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -9,7 +7,6 @@ import numpy as np
 from .agent import BaseAgent
 from .item import ScheduleItem
 from .optimization import StudentAllocationProgram
-
 
 """Initializations functions"""
 
