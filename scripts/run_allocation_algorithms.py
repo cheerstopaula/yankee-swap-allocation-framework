@@ -23,19 +23,19 @@ from fair.metrics import (
 from fair.optimization import StudentAllocationProgram
 from fair.simulation import RenaissanceMan
 
-NUM_STUDENTS = 3
+NUM_STUDENTS = 10
 MAX_COURSES_PER_TOPIC = 5
 LOWER_MAX_COURSES_TOTAL = 1
 UPPER_MAX_COURSES_TOTAL = 5
 EXCEL_SCHEDULE_PATH = os.path.join(
-    os.path.dirname(__file__), "../resources/fall2023schedule-2-cat.xlsx"
+    os.path.dirname(__file__), "../resources/fall2023schedule.csv"
 )
 SPARSE = False
 FIND_OPTIMAL = True
 
 # load schedule as DataFrame
 with open(EXCEL_SCHEDULE_PATH, "rb") as fd:
-    df = pd.read_excel(fd)
+    df = pd.read_csv(fd)
 
 # construct features from DataFrame
 course = Course(df["Catalog"].astype(str).unique().tolist())

@@ -1,0 +1,108 @@
+﻿Categories,Catalog,CICScapacity,Section,zc.days,Mtg Time
+Programming,100,60,01,Mon Wed,04:00 PM - 05:15 PM
+Programming,100,60,02,Mon Wed,04:00 PM - 05:15 PM
+Programming,100,60,03,Tue Thu,08:30 AM - 09:45 AM
+Programming,100,60,04,Tue Thu,11:30 AM - 12:45 PM
+Programming,100,60,05,Tue Thu,04:00 PM - 05:15 PM
+Programming,100,60,06,Mon Wed,02:30 PM - 03:45 PM
+Programming,100,60,07,Mon Wed,04:00 PM - 05:15 PM
+Programming,100,60,08,Mon Wed,04:00 PM - 05:15 PM
+Programming,101,300,01,Tue Thu,08:30 AM - 09:45 AM
+Social,200,16,01,Mon Wed,01:25 PM - 02:15 PM
+Programming,201,325,01,Tue Thu,01:00 PM - 02:15 PM
+Programming,201,175,02,Tue Thu,01:00 PM - 02:15 PM
+Hardware,202,48,01,Tue Thu,01:00 PM - 02:15 PM
+Social,203,40,01,Tue,10:00 AM - 11:15 AM
+Social,300,20,01,Tue Thu,11:30 AM - 12:45 PM
+Social,300,4,02,Tue Thu,11:30 AM - 12:45 PM
+Social,300,20,03,Tue Thu,10:00 AM - 11:15 AM
+Social,300,4,04,Tue Thu,10:00 AM - 11:15 AM
+Social,300,20,05,Mon Wed,02:30 PM - 03:45 PM
+Social,300,4,06,Mon Wed,02:30 PM - 03:45 PM
+Social,300,20,07,Mon Wed,04:00 PM - 05:15 PM
+Social,300,4,08,Mon Wed,04:00 PM - 05:15 PM
+Social,300,20,09,Tue Thu,04:00 PM - 05:15 PM
+Social,300,4,10,Tue Thu,04:00 PM - 05:15 PM
+Social,300,20,11,Mon Wed,01:00 PM - 02:15 PM
+Social,300,4,12,Mon Wed,01:00 PM - 02:15 PM
+Social,300,20,13,Tue Thu,01:00 PM - 02:15 PM
+Social,300,4,14,Tue Thu,01:00 PM - 02:15 PM
+Social,300,20,15,Tue Thu,02:30 PM - 03:45 PM
+Social,300,4,16,Tue Thu,05:30 PM - 06:45 PM
+Social,300,20,17,Mon Wed Fri,10:10 AM - 11:00 AM
+Social,300,4,18,Mon Wed Fri,10:10 AM - 11:00 AM
+Social,300,20,19,Mon Wed Fri,11:15 AM - 12:05 PM
+Social,300,4,20,Mon Wed Fri,11:15 AM - 12:05 PM
+Programming,102,150,01,Mon Wed Fri,01:25 PM - 02:15 PM
+Programming,204,340,01,Tue Thu,04:00 PM - 05:15 PM
+Systems,205,330,01,Tue Thu,10:00 AM - 11:15 AM
+Math,206,193,01,Mon Wed,02:30 PM - 03:45 PM
+Math,206,200,02,Mon Wed,04:00 PM - 05:15 PM
+Data Science,207,200,01,Mon Wed Fri,01:25 PM - 02:15 PM
+Data Science,207,200,02,Mon Wed Fri,10:10 AM - 11:00 AM
+Data Science,301,150,01,Tue Thu,11:30 AM - 12:45 PM
+Data Science,301,150,02,Mon Wed,02:30 PM - 03:45 PM
+Programming,302,50,01,Tue Thu,01:00 PM - 02:15 PM
+Programming,302,50,02,Tue Thu,01:00 PM - 02:15 PM
+Programming,302,50,03,Mon Wed,04:00 PM - 05:15 PM
+Programming,303,80,01,Mon Wed,04:00 PM - 05:15 PM
+Programming,304,106,01,Tue Thu,01:00 PM - 02:15 PM
+Social,305,66,01,Mon Wed Fri,01:25 PM - 02:15 PM
+Hardware,306,55,01,Mon Wed,04:00 PM - 05:15 PM
+Data Science,307,99,01,Mon,10:10 AM - 12:05 PM
+Data Science,307,99,02,Wed,10:10 AM - 12:05 PM
+Cybersec,308,80,01,Tue Thu,01:00 PM - 02:15 PM
+Cybersec,309,120,01,Mon Wed,02:30 PM - 03:45 PM
+Systems,310,180,01,Tue Thu,10:00 AM - 11:15 AM
+Data Science,311,220,01,Tue Thu,11:30 AM - 12:45 PM
+Social,400,40,01,Mon Wed,04:00 PM - 05:15 PM
+Social,401,5,01,Tue Thu,01:00 PM - 02:15 PM
+Social,401,5,02,Tue Thu,01:00 PM - 02:15 PM
+Social,401,5,03,Mon Wed,04:00 PM - 05:15 PM
+Programming,402,175,01,Tue Thu,04:00 PM - 05:15 PM
+Systems,403,120,01,Tue Thu,02:30 PM - 03:45 PM
+Data Science,404,150,01,Tue Thu,04:00 PM - 05:15 PM
+Systems,405,75,01,Mon Wed,02:30 PM - 03:45 PM
+Math,500,15,01,Tue Thu,08:30 AM - 09:45 AM
+Math,500,15,02,Tue Thu,08:30 AM - 09:45 AM
+Data Science,501,80,01,Tue Thu,01:00 PM - 02:15 PM
+Data Science,501,80,02,Tue Thu,01:00 PM - 02:15 PM
+Data Science,501,20,01,Tue Thu,01:00 PM - 02:15 PM
+Data Science,502,25,01,Tue Thu,11:30 AM - 12:45 PM
+Data Science,502,25,02,Tue Thu,11:30 AM - 12:45 PM
+Programming,503,75,01,Tue Thu,10:00 AM - 11:15 AM
+Programming,503,75,02,Tue Thu,10:00 AM - 11:15 AM
+Data Science,504,10,01,Tue Thu,02:30 PM - 03:45 PM
+Data Science,504,10,02,Tue Thu,02:30 PM - 03:45 PM
+Data Science,505,60,01,Mon Wed,04:00 PM - 05:15 PM
+Data Science,505,60,02,Mon Wed,04:00 PM - 05:15 PM
+Cybersec,506,30,01,Tue,05:30 PM - 06:45 PM
+Cybersec,506,36,02,Tue,05:30 PM - 06:45 PM
+Cybersec,506,80,01,Tue,05:30 PM - 06:45 PM
+Cybersec,507,27,01,Tue Thu,10:00 AM - 11:15 AM
+Cybersec,507,28,02,Tue Thu,10:00 AM - 11:15 AM
+Cybersec,507,30,01,Tue Thu,10:00 AM - 11:15 AM
+Systems,508,38,01,Tue Thu,11:30 AM - 12:45 PM
+Systems,508,39,02,Tue Thu,11:30 AM - 12:45 PM
+Data Science,509,97,01,Tue Thu,05:30 PM - 06:45 PM
+Data Science,509,96,02,Tue Thu,05:30 PM - 06:45 PM
+Data Science,600,120,01,Tue Thu,02:30 PM - 03:45 PM
+Data Science,601,20,01,Tue Thu,08:30 AM - 09:45 AM
+Hardware,602,36,01,Tue Thu,10:00 AM - 11:15 AM
+Data Science,603,65,01,Tue Thu,04:00 PM - 05:15 PM
+Data Science,604,36,01,Mon Wed,10:10 AM - 11:25 AM
+Systems,605,50,01,Tue Thu,11:30 AM - 12:45 PM
+Systems,606,36,01,Tue,01:00 PM - 02:15 PM
+Systems,606,30,01,Tue,01:00 PM - 02:15 PM
+Data Science,607,235,01,Tue Thu,01:00 PM - 02:15 PM
+Data Science,608,159,01,Tue Thu,04:00 PM - 05:15 PM
+Data Science,609,180,01,Tue Thu,10:00 AM - 11:15 AM
+Data Science,610,65,01,Tue Thu,02:30 PM - 03:45 PM
+Social,611,65,01,Mon Wed,02:30 PM - 03:45 PM
+Data Science,612,55,01,Mon Wed,09:05 AM - 10:20 AM
+Social,613,55,01,Wed,05:30 PM - 06:20 PM
+Data Science,103,100,01,Tue Thu,02:30 PM - 03:45 PM
+Math,104,60,01,Mon Wed,04:00 PM - 05:15 PM
+Social,208,55,01,Tue Thu,10:00 AM - 11:15 AM
+Social,312,40,01,Tue Thu,02:30 PM - 03:45 PM
+Data Science,313,70,01,Mon Wed,04:00 PM - 05:15 PM
