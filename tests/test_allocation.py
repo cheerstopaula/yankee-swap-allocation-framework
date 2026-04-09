@@ -1,6 +1,6 @@
 from fair.agent import LegacyStudent
 from fair.allocation import (
-    general_yankee_swap_E,
+    yankee_swap,
     round_robin,
     serial_dictatorship,
 )
@@ -9,7 +9,7 @@ from fair.item import ScheduleItem
 from fair.simulation import RenaissanceMan
 
 
-def test_general_yankee_swap_E(
+def test_yankee_swap(
     renaissance1: RenaissanceMan,
     renaissance2: RenaissanceMan,
     schedule: list[ScheduleItem],
@@ -18,7 +18,7 @@ def test_general_yankee_swap_E(
     leg_student1 = LegacyStudent(renaissance1, renaissance1.preferred_courses, course)
     leg_student2 = LegacyStudent(renaissance2, renaissance2.preferred_courses, course)
 
-    X, _, _ = general_yankee_swap_E([leg_student1, leg_student2], schedule)
+    X, _, _ = yankee_swap([leg_student1, leg_student2], schedule)
     alloc1 = X[:, 0]
     alloc2 = X[:, 1]
 

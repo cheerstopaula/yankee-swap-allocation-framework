@@ -40,7 +40,7 @@ def initialize_exchange_graph(items: list[ScheduleItem]):
 
     There is one node for every item and a sink node 't' representing the pile of unnasigned items.
     Initially, there are no edges between items, and an edge from every item node to node 't'.
-    Disclaimer: The previous assumes that every items has capacity > 0
+    Disclaimer: The previous assumes that every item has capacity > 0
 
     Args:
         N (int): number of items
@@ -57,7 +57,45 @@ def initialize_exchange_graph(items: list[ScheduleItem]):
     return exchange_graph
 
 
-"""Retrieve/update information"""
+def get_bundle_from_allocation_matrix(
+    X: type[np.ndarray], items: list[ScheduleItem], agent_index: int
+):
+    """Get list of agent's current bundle
+
+    Get list of all items currently owned by a certain agent (bundle), given the current allocation
+
+    Args:
+        X (type[np.ndarray]): Allocation matrix
+        items (list[ScheduleItem]): List of items from class BaseItem
+        agent_index (int): index of the agent for which we want to get the current bundle
+    Returns:
+        list[ScheduleItem]: List of items from the BaseItem class currently owned by the agent
+    """
+    bundle0 = []
+    items_list = X[:, agent_index]
+    for i in range(len(items_list)):
+        if int(items_list[i]) == 1:
+            bundle0.append(items[i])
+    return bundle0
+
+
+def get_bundle_indexes_from_allocation_matrix(X: type[np.ndarray], agent_index: int):
+    """Get list of agent's current bundle's indices.
+
+    Get list of indices of all items currently owned by a certain agent (bundle), given the current allocation
+
+    Args:
+        X (type[np.ndarray]): Allocation matrix
+        agent_index (int): index of the agent for which we want to get the current bundle
+    Returns:
+        list[int]: List of indices of the items from the BaseItem class currently owned by the agent
+    """
+    bundle_indexes = []
+    items_list = X[:, agent_index]
+    for i in range(len(items_list)):
+        if int(items_list[i]) == 1:
+            bundle_indexes.append(i)
+    return bundle_indexes
 
 
 def get_gain_function(
@@ -102,68 +140,10 @@ def get_gain_function(
         return w_i / (val + 1)
 
 
-def get_owners_list(X: type[np.ndarray], item_index: int):
-    """Get list of item's current owners.
-
-    From the exchange matrix, list of indices of all agents that currently have certain item.
-
-    Args:
-        X (type[np.ndarray]): Allocation matrix
-        item_index (int): index of the item for which we want to get the owners
-
-    Returns:
-        list[int]: list of item's owners' indices
-    """
-    item_list = X[item_index]
-    owners_list = np.nonzero(item_list)
-    return owners_list[0]
-
-
-def get_bundle_from_allocation_matrix(
-    X: type[np.ndarray], items: list[ScheduleItem], agent_index: int
-):
-    """Get list of agent's current bundle
-
-    Get list of all items currently owned by a certain agent (bundle), given the current allocation
-
-    Args:
-        X (type[np.ndarray]): Allocation matrix
-        items (list[ScheduleItem]): List of items from class BaseItem
-        agent_index (int): index of the agent for which we want to get the current bundle
-    Returns:
-        list[ScheduleItem]: List of items from the BaseItem class currently owned by the agent
-    """
-    bundle0 = []
-    items_list = X[:, agent_index]
-    for i in range(len(items_list)):
-        if int(items_list[i]) == 1:
-            bundle0.append(items[i])
-    return bundle0
-
-
-def get_bundle_indexes_from_allocation_matrix(X: type[np.ndarray], agent_index: int):
-    """Get list of agent's current bundle's indices.
-
-    Get list of indices of all items currently owned by a certain agent (bundle), given the current allocation
-
-    Args:
-        X (type[np.ndarray]): Allocation matrix
-        agent_index (int): index of the agent for which we want to get the current bundle
-    Returns:
-        list[int]: List of indices of the items from the BaseItem class currently owned by the agent
-    """
-    bundle_indexes = []
-    items_list = X[:, agent_index]
-    for i in range(len(items_list)):
-        if int(items_list[i]) == 1:
-            bundle_indexes.append(i)
-    return bundle_indexes
-
-
 """Update allocation after finding the shortest path in exchange graph"""
 
 
-def update_allocation_E(
+def update_allocation(
     X: type[np.ndarray],
     exchange_graph: type[nx.Graph],
     edge_matrix: list[list],
@@ -285,7 +265,7 @@ def add_agent_to_exchange_graph(
     return exchange_graph
 
 
-def update_exchange_graph_E(
+def update_exchange_graph(
     X: type[np.ndarray],
     exchange_graph: type[nx.Graph],
     edge_matrix: list[list],
@@ -468,50 +448,7 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
     return X
 
 
-def round_robin_weights(
-    agents: list[BaseAgent], items: list[ScheduleItem], weights: list[float]
-):
-    """Round Robin allocation algorithm, considering different weights among agents.
-
-    In each round, give the playing agent one item they can add to their bundle that give them positive utility, if any
-
-    Args:
-        agents (list[BaseAgent]): List of agents from class BaseAgent
-        items (list[ScheduleItem]): List of items from class BaseItem
-        weights (list[float]): list of agents assigned weights
-
-    Returns:
-        X (type[np.ndarray]): allocation matrix
-    """
-    players = list(range(len(agents)))
-    X = initialize_allocation_matrix(items, agents)
-    weights_aux = weights.copy()
-    while len(players) > 0:
-        weight = weights_aux[0]
-        for player in players:
-            if weights[player] == weight:
-                val = 0
-                current_item = []
-                agent = agents[player]
-                desired_items = agent.get_desired_items_indexes(items)
-                bundle = get_bundle_from_allocation_matrix(X, items, player)
-                for item in desired_items:
-                    if X[item, 0] > 0:
-                        current_val = agent.marginal_contribution(bundle, items[item])
-                        if current_val > val:
-                            current_item.clear()
-                            current_item.append(item)
-                            val = current_val
-                if len(current_item) > 0:
-                    X[current_item[0], player] = 1
-                    X[current_item[0], 0] -= 1
-                else:
-                    players.remove(player)
-                    weights_aux.pop(0)
-    return X
-
-
-def general_yankee_swap_E(
+def yankee_swap(
     agents: list[BaseAgent],
     items: list[ScheduleItem],
     criteria: str = "LorenzDominance",
@@ -568,10 +505,10 @@ def general_yankee_swap_E(
             time_steps.append(time.process_time() - start)
             agents_involved_arr.append(0)
         else:
-            X, exchange_graph, edge_matrix, agents_involved = update_allocation_E(
+            X, exchange_graph, edge_matrix, agents_involved = update_allocation(
                 X, exchange_graph, edge_matrix, agents, items, path, agent_picked
             )
-            exchange_graph, edge_matrix = update_exchange_graph_E(
+            exchange_graph, edge_matrix = update_exchange_graph(
                 X,
                 exchange_graph,
                 edge_matrix,
