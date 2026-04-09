@@ -333,9 +333,11 @@ def update_exchange_graph(
 def integer_linear_program(
     agents: list[BaseAgent], items: list[ScheduleItem], valuations=None
 ):
+    if valuations is not None:
+        valuations = valuations.flatten()
     orig_students = [student.student for student in agents]
     program = StudentAllocationProgram(orig_students, items).compile()
-    opt_alloc = program.formulateUSW(valuations=valuations.flatten()).solve()
+    opt_alloc = program.formulateUSW(valuations=valuations).solve()
     return opt_alloc.reshape(len(agents), len(items)).transpose()
 
 
@@ -454,8 +456,7 @@ def yankee_swap(
     valuations=None,
 ):
     """General Yankee swap allocation algorithm, edge matrix version.
-
-    Equivalent to general_yankee_swap, just different bookkeeping to speed things up
+    ("smart" bookkeeping to speed things up)
 
     Args:
         agents (list[BaseAgent]): List of agents from class BaseAgent
@@ -463,12 +464,12 @@ def yankee_swap(
         criteria (str, optional): gain function criteria. Defaults to "LorenzDominance". See get_gain_function to see other alternatives
         weights (list[float]): list of agents assigned weights
         plot_exchange_graph (bool, optional): Defaults to False. Change to True to display exchange graph plot after every modification to it.
+        valuations : algorithm runs considering binary valuations by default, but it is allowed to receive non-binary matrix with valuations.
 
     Returns:
         X (type[np.ndarray]): allocation matrix
-        time_steps (list[float]): time elapsed until the end of every iteration
-        agents_involved_arr (list[int]): nuber of agents involved in every iteration
     """
+
     n = len(agents)
     m = len(items)
     players = list(range(n))
@@ -477,11 +478,8 @@ def yankee_swap(
     edge_matrix = [[[] for i in range(m)] for j in range(m)]
     gain_vector = np.zeros([n])
     count = 0
-    time_steps = []
-    agents_involved_arr = []
-    start = time.process_time()
     while len(players) > 0:
-        print("Iteration: %d" % count, end="\r")
+        # print("Iteration: %d" % count, end="\r")
         count += 1
         agent_picked = np.argmax(gain_vector)
         exchange_graph = add_agent_to_exchange_graph(
@@ -499,8 +497,6 @@ def yankee_swap(
         if path == False:
             players.remove(agent_picked)
             gain_vector[agent_picked] = float("-inf")
-            time_steps.append(time.process_time() - start)
-            agents_involved_arr.append(0)
         else:
             X, exchange_graph, edge_matrix, agents_involved = update_allocation(
                 X, exchange_graph, edge_matrix, agents, items, path, agent_picked
@@ -521,6 +517,4 @@ def yankee_swap(
             if plot_exchange_graph:
                 nx.draw(exchange_graph, with_labels=True)
                 plt.show()
-            time_steps.append(time.process_time() - start)
-            agents_involved_arr.append(len(agents_involved))
-    return X, time_steps, agents_involved_arr
+    return X

@@ -4,7 +4,12 @@ from collections import defaultdict
 import pandas as pd
 
 from fair.agent import LegacyStudent
-from fair.allocation import yankee_swap, round_robin, serial_dictatorship
+from fair.allocation import (
+    yankee_swap,
+    round_robin,
+    serial_dictatorship,
+    integer_linear_program,
+)
 from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from fair.envy import (
     EF_violations,
@@ -20,16 +25,18 @@ from fair.metrics import (
     precompute_bundles_valuations,
     PMMS_violations,
 )
-from fair.optimization import StudentAllocationProgram
 from fair.simulation import RenaissanceMan
 
-NUM_STUDENTS = 10
+NUM_STUDENTS = 200
 MAX_COURSES_PER_TOPIC = 5
-LOWER_MAX_COURSES_TOTAL = 1
+LOWER_MAX_COURSES_TOTAL = 2
 UPPER_MAX_COURSES_TOTAL = 5
+
 EXCEL_SCHEDULE_PATH = os.path.join(
     os.path.dirname(__file__), "../resources/fall2023schedule.csv"
 )
+CAPACITY_SCALE_FACTOR = 0.1
+
 SPARSE = False
 FIND_OPTIMAL = True
 
@@ -56,7 +63,12 @@ for idx, (_, row) in enumerate(df.iterrows()):
     sec = row["Section"]
     capacity = row["CICScapacity"]
     dys = tuple([day.strip() for day in row["zc.days"].split(" ")])
-    item = ScheduleItem(features, [crs, slt, dys, sec], index=idx, capacity=capacity)
+    item = ScheduleItem(
+        features,
+        [crs, slt, dys, sec],
+        index=idx,
+        capacity=round(capacity * CAPACITY_SCALE_FACTOR),
+    )
     schedule.append(item)
     topic_map[row["Categories"]].append(item)
 
@@ -65,6 +77,7 @@ topics = [topic for topic in topic_map.values()]
 # global constraints
 course_time_constr = CourseTimeConstraint.from_items(schedule, slot, weekday, SPARSE)
 course_sect_constr = MutualExclusivityConstraint.from_items(schedule, course, SPARSE)
+
 
 # randomly generate students
 students = []
@@ -87,10 +100,11 @@ for i in range(NUM_STUDENTS):
     )
     students.append(legacy_student)
 
-X_YS, _, _ = yankee_swap(students, schedule)
+# run allocation algorithms and compute metrics
+X_YS = yankee_swap(students, schedule)
 print("YS utilitarian welfare: ", utilitarian_welfare(X_YS, students, schedule))
 print("YS nash welfare: ", nash_welfare(X_YS, students, schedule))
-print("YS leximin vector: ", leximin((X_YS), students, schedule))
+# print("YS leximin vector: ", leximin((X_YS), students, schedule))
 bundles, valuations = precompute_bundles_valuations(X_YS, students, schedule)
 print(
     "YS EF violations (total, agents): ",
@@ -112,7 +126,7 @@ print(
 X_SD = serial_dictatorship(students, schedule)
 print("SD utilitarian welfare: ", utilitarian_welfare(X_SD, students, schedule))
 print("SD nash welfare: ", nash_welfare(X_SD, students, schedule))
-print("SD leximin vector: ", leximin(X_SD, students, schedule))
+# print("SD leximin vector: ", leximin(X_SD, students, schedule))
 bundles, valuations = precompute_bundles_valuations(X_SD, students, schedule)
 print(
     "SD EF violations (total, agents): ",
@@ -134,7 +148,7 @@ print(
 X_RR = round_robin(students, schedule)
 print("RR utilitarian welfare: ", utilitarian_welfare(X_RR, students, schedule))
 print("RR nash welfare: ", nash_welfare(X_RR, students, schedule))
-print("RR leximin vector: ", leximin(X_RR, students, schedule))
+# print("RR leximin vector: ", leximin(X_RR, students, schedule))
 bundles, valuations = precompute_bundles_valuations(X_RR, students, schedule)
 print(
     "RR EF violations (total, agents): ",
@@ -154,13 +168,10 @@ print(
 )
 
 
-orig_students = [student.student for student in students]
-program = StudentAllocationProgram(orig_students, schedule).compile()
-opt_alloc = program.formulateUSW().solve()
-X_ILP = opt_alloc.reshape(len(students), len(schedule)).transpose()
+X_ILP = integer_linear_program(students, schedule)
 print("ILP utilitarian welfare: ", utilitarian_welfare(X_ILP, students, schedule))
 print("ILP nash welfare: ", nash_welfare(X_ILP, students, schedule))
-print("ILP leximin vector: ", leximin(X_ILP, students, schedule))
+# print("ILP leximin vector: ", leximin(X_ILP, students, schedule))
 bundles, valuations = precompute_bundles_valuations(X_ILP, students, schedule)
 print(
     "ILP EF violations (total, agents): ",

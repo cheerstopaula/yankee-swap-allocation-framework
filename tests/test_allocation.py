@@ -18,7 +18,7 @@ def test_yankee_swap(
     leg_student1 = LegacyStudent(renaissance1, renaissance1.preferred_courses, course)
     leg_student2 = LegacyStudent(renaissance2, renaissance2.preferred_courses, course)
 
-    X, _, _ = yankee_swap([leg_student1, leg_student2], schedule)
+    X = yankee_swap([leg_student1, leg_student2], schedule)
     alloc1 = X[:, 0]
     alloc2 = X[:, 1]
 

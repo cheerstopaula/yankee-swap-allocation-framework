@@ -195,7 +195,7 @@ def yankee_swap_sub_problem(
     )
     sub_student = legacy_student
 
-    X_sub, _, _ = yankee_swap([sub_student, sub_student], new_schedule)
+    X_sub = yankee_swap([sub_student, sub_student], new_schedule)
 
     bundle_1 = get_bundle_from_allocation_matrix(X_sub, new_schedule, 0)
     bundle_2 = get_bundle_from_allocation_matrix(X_sub, new_schedule, 1)
