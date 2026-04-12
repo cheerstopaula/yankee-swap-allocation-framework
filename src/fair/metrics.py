@@ -1,9 +1,7 @@
 import copy
-
 import numpy as np
-
 from .agent import BaseAgent, LegacyStudent
-from .allocation import general_yankee_swap_E, get_bundle_from_allocation_matrix
+from .allocation import yankee_swap, get_bundle_from_allocation_matrix
 from .constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from .item import ScheduleItem, sub_schedule
 from .simulation import SubStudent
@@ -197,7 +195,7 @@ def yankee_swap_sub_problem(
     )
     sub_student = legacy_student
 
-    X_sub, _, _ = general_yankee_swap_E([sub_student, sub_student], new_schedule)
+    X_sub = yankee_swap([sub_student, sub_student], new_schedule)
 
     bundle_1 = get_bundle_from_allocation_matrix(X_sub, new_schedule, 0)
     bundle_2 = get_bundle_from_allocation_matrix(X_sub, new_schedule, 1)
