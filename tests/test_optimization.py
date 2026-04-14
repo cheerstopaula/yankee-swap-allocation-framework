@@ -1,7 +1,7 @@
 import numpy as np
 
 from fair.agent import BaseAgent, LegacyStudent
-from fair.allocation import general_yankee_swap_E
+from fair.allocation import yankee_swap
 from fair.constraint import PreferenceConstraint
 from fair.feature import Course
 from fair.item import ScheduleItem
@@ -22,7 +22,7 @@ def test_integer_linear(
     leg_student2 = LegacyStudent(renaissance2, renaissance2.preferred_courses, course)
     leg_agents = [leg_student1, leg_student2]
 
-    X, _, _ = general_yankee_swap_E([leg_student1, leg_student2], schedule)
+    X = yankee_swap([leg_student1, leg_student2], schedule)
     util = utilitarian_welfare(X, leg_agents, schedule)
 
     program = IntegerLinearProgram(agents).compile()
