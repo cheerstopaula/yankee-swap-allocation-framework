@@ -15,7 +15,7 @@ from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from fair.envy import (
     EF_violations,
     EF1_violations,
-    EFX_violations,
+    EF_violations_reponses,
 )
 from fair.feature import Course, Section, Slot, Weekday, slots_for_time_range
 from fair.item import ScheduleItem
@@ -29,8 +29,8 @@ from fair.simulation import RenaissanceMan
 
 NUM_STUDENTS = 200
 MAX_COURSES_PER_TOPIC = 5
-LOWER_MAX_COURSES_TOTAL = 2
-UPPER_MAX_COURSES_TOTAL = 5
+LOWER_MAX_COURSES_TOTAL = 3
+UPPER_MAX_COURSES_TOTAL = 6
 SEED = 1
 
 EXCEL_SCHEDULE_PATH = os.path.join(
@@ -102,41 +102,88 @@ for i in range(NUM_STUDENTS):
     students.append(legacy_student)
 
 
-def run_allocation_compute_metrics(algorithm, compute_envy_share_metrics=False):
+def run_allocation_compute_metrics(
+    algorithm, valuations=None, compute_envy_share_metrics=True
+):
+    # run allocation algorithm and compute runtime
     start = time.time()
-    X = algorithm(students, schedule)
+    X = algorithm(students, schedule, valuations=valuations)
     runtime = time.time() - start
     print("Running time: ", runtime)
-    print("USW: ", utilitarian_welfare(X, students, schedule))
-    print("NSW: ", nash_welfare(X, students, schedule)[1])
-    print("Empty Bundles: ", nash_welfare(X, students, schedule)[0])
+
+    # compute welfare metrics
+    print("USW: ", utilitarian_welfare(X, students, schedule, valuations=valuations))
+    zeros, NSW = nash_welfare(X, students, schedule, valuations=valuations)
+    print("NSW: ", NSW)
+    print("Empty Bundles: ", zeros)
+
     # compute envy and share based metrics
     if compute_envy_share_metrics:
-        bundles, valuations = precompute_bundles_valuations(X, students, schedule)
-        print(
-            "EF violations (count, agents): ",
-            EF_violations(X, students, schedule, valuations),
-        )
-        print(
-            "EF-1 violations (count, agents): ",
-            EF1_violations(X, students, schedule, bundles, valuations),
-        )
-        print(
-            "PMMS violations (count, agents): ",
-            PMMS_violations(X, students, schedule, bundles, valuations),
-        )
+        if valuations is None:
+            bundles, current_valuations = precompute_bundles_valuations(
+                X, students, schedule
+            )
+            print(
+                "PMMS violations (count, agents): ",
+                PMMS_violations(X, students, schedule, bundles, current_valuations),
+            )
+            print(
+                "EF violations (count, agents): ",
+                EF_violations(X, students, schedule, current_valuations),
+            )
+            print(
+                "EF-1 violations (count, agents): ",
+                EF1_violations(X, students, schedule, bundles, current_valuations),
+            )
+        else:
+            print(
+                "EF_violations: ",
+                EF_violations_reponses(X, students, schedule, valuations=valuations),
+            )
 
 
 # run allocation algorithms and compute metrics, binary case
-print("=========INTEGER LINEAR PROGRAM=========")
+
+print(
+    "\n=============================\n=========BINARY CASE=========\n=============================\n"
+)
+
+print("===========INTEGER LINEAR PROGRAM===========")
 run_allocation_compute_metrics(integer_linear_program)
 
-print("==========SERIAL DICTATORSHIP==========")
+print("============SERIAL DICTATORSHIP=============")
 run_allocation_compute_metrics(serial_dictatorship)
 
-print("==============ROUND ROBIN==============")
+print("================ROUND ROBIN=================")
 run_allocation_compute_metrics(round_robin)
 
-print("==============YANKEE SWAP==============")
+print("================YANKEE SWAP=================")
 run_allocation_compute_metrics(yankee_swap)
 
+
+# run allocation algorithms and compute metrics, non-binary case
+
+print(
+    "\n=============================\n=======NON-BINARY CASE=======\n=============================\n"
+)
+
+# Build random numerical valuations matrix:
+# preferred items get a random value 1-7, all others get 0
+rng = np.random.default_rng(seed=0)
+valuations = np.zeros((len(students), len(schedule)), dtype=int)
+for i, student in enumerate(students):
+    preferred_idxs = student.get_desired_items_indexes(schedule)
+    valuations[i, preferred_idxs] = rng.integers(1, 8, size=len(preferred_idxs))
+
+# run allocation algorithms and compute metrics for the non-binary case
+print("===========INTEGER LINEAR PROGRAM===========")
+run_allocation_compute_metrics(integer_linear_program, valuations=valuations)
+
+print("============SERIAL DICTATORSHIP=============")
+run_allocation_compute_metrics(serial_dictatorship, valuations=valuations)
+
+print("================ROUND ROBIN=================")
+run_allocation_compute_metrics(round_robin, valuations=valuations)
+
+print("================YANKEE SWAP=================")
+run_allocation_compute_metrics(yankee_swap, valuations=valuations)
