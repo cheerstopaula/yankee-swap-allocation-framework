@@ -7,6 +7,7 @@ from .item import ScheduleItem
 from .optimization import StudentAllocationProgram
 
 
+# envy metrics for the binary case
 def EF_violations(
     X: type[np.ndarray],
     agents: list[BaseAgent],
@@ -44,79 +45,6 @@ def EF_violations(
             if valuations[j, j] < valuations[j, i]:
                 EF_matrix[j, i] = 1
     return np.sum(EF_matrix > 0), np.sum(np.any(EF_matrix > 0, axis=1))
-
-
-def EF_violations_reponses(
-    X: np.ndarray,
-    agents: list[BaseAgent],
-    items: list[ScheduleItem],
-    student_status_map: dict,
-    valuations: np.ndarray,
-    memo=None,
-):
-    if memo is None:
-        memo = {}
-
-    num_agents = len(agents)
-    EF_matrix = np.zeros((num_agents, num_agents))
-
-    # Precompute utilities
-    potential_utilities = valuations @ X
-    current_utilities = np.diag(potential_utilities)
-
-    def best_response_value(agent_idx: int, bundle_owner_idx: int):
-        bundle_signature = tuple(X[:, bundle_owner_idx].astype(int))
-        key = (agent_idx, bundle_signature)
-
-        if key in memo:
-            return memo[key]
-
-        # Build small ILP
-        orig_students = [agents[agent_idx].student]
-        c_small_ilp = valuations[agent_idx]
-
-        schedule_copy = [copy.copy(item) for item in items]
-        for item_idx, item in enumerate(schedule_copy):
-            item.capacity = int(X[item_idx, bundle_owner_idx] == 1)
-
-        program = StudentAllocationProgram(orig_students, schedule_copy).compile()
-        opt_alloc = program.formulateUSW(valuations=c_small_ilp).solve()
-
-        value = c_small_ilp @ opt_alloc
-        memo[key] = value
-        return value
-
-    # Fill EF matrix
-    for i in range(num_agents):
-        EF_matrix[i, i] = current_utilities[i]
-        for j in range(num_agents):
-            if i == j:
-                continue
-
-            # If no envy, use direct utility
-            if current_utilities[i] >= potential_utilities[i, j]:
-                EF_matrix[i, j] = potential_utilities[i, j]
-            else:
-                EF_matrix[i, j] = best_response_value(i, j)
-
-    # -------- Vectorized envy violation counting --------
-
-    envy_mask = EF_matrix > current_utilities[:, None]
-
-    total_envy = np.sum(envy_mask)
-
-    status_envy = 0
-    downward_envy = 0
-
-    for i in range(num_agents):
-        for j in range(num_agents):
-            if envy_mask[i, j]:
-                if student_status_map[agents[i]] == student_status_map[agents[j]]:
-                    status_envy += 1
-                elif student_status_map[agents[i]] > student_status_map[agents[j]]:
-                    downward_envy += 1
-
-    return total_envy, status_envy, downward_envy, memo
 
 
 def EF1_violations(
@@ -219,3 +147,81 @@ def EFX_violations(
                 if not for_every_item(j, i):
                     EFX_matrix[j, i] = 1
     return np.sum(EFX_matrix > 0), np.sum(np.any(EFX_matrix > 0, axis=1))
+
+
+# envy metrics for the non-binary case
+
+
+def EF_violations_reponses(
+    X: np.ndarray,
+    agents: list[BaseAgent],
+    items: list[ScheduleItem],
+    valuations: np.ndarray,
+    student_status_map: dict = None,
+    memo=None,
+):
+    if memo is None:
+        memo = {}
+
+    num_agents = len(agents)
+    EF_matrix = np.zeros((num_agents, num_agents))
+
+    # Precompute utilities
+    potential_utilities = valuations @ X
+    current_utilities = np.diag(potential_utilities)
+
+    def best_response_value(agent_idx: int, bundle_owner_idx: int):
+        bundle_signature = tuple(X[:, bundle_owner_idx].astype(int))
+        key = (agent_idx, bundle_signature)
+
+        if key in memo:
+            return memo[key]
+
+        # Build small ILP
+        orig_students = [agents[agent_idx].student]
+        c_small_ilp = valuations[agent_idx]
+
+        schedule_copy = [copy.copy(item) for item in items]
+        for item_idx, item in enumerate(schedule_copy):
+            item.capacity = int(X[item_idx, bundle_owner_idx] == 1)
+
+        program = StudentAllocationProgram(orig_students, schedule_copy).compile()
+        opt_alloc = program.formulateUSW(valuations=c_small_ilp).solve()
+
+        value = c_small_ilp @ opt_alloc
+        memo[key] = value
+        return value
+
+    # Fill EF matrix
+    for i in range(num_agents):
+        EF_matrix[i, i] = current_utilities[i]
+        for j in range(num_agents):
+            if i == j:
+                continue
+
+            # If no envy, use direct utility
+            if current_utilities[i] >= potential_utilities[i, j]:
+                EF_matrix[i, j] = potential_utilities[i, j]
+            else:
+                EF_matrix[i, j] = best_response_value(i, j)
+
+    # -------- Vectorized envy violation counting --------
+
+    envy_mask = EF_matrix > current_utilities[:, None]
+
+    total_envy = np.sum(envy_mask)
+    if student_status_map is None:
+        return total_envy
+
+    status_envy = 0
+    downward_envy = 0
+
+    for i in range(num_agents):
+        for j in range(num_agents):
+            if envy_mask[i, j]:
+                if student_status_map[agents[i]] == student_status_map[agents[j]]:
+                    status_envy += 1
+                elif student_status_map[agents[i]] > student_status_map[agents[j]]:
+                    downward_envy += 1
+
+    return total_envy, status_envy, downward_envy, memo
