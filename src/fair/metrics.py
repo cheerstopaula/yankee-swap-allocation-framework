@@ -11,7 +11,7 @@ def utilitarian_welfare(
     X: type[np.ndarray],
     agents: list[BaseAgent],
     items: list[ScheduleItem],
-    current_utilities: list[int] = None,
+    valuations=None,
 ):
     """Compute utilitarian social welfare (USW)
 
@@ -25,7 +25,7 @@ def utilitarian_welfare(
     Returns:
         float: USW / len(agents)
     """
-    if current_utilities is None:
+    if valuations is None:
         util = 0
         for agent_index, agent in enumerate(agents):
             bundle = get_bundle_from_allocation_matrix(X, items, agent_index)
@@ -33,6 +33,7 @@ def utilitarian_welfare(
             util += val
         return util / (len(agents))
     else:
+        current_utilities = np.diag(np.dot(valuations, X))
         return sum(current_utilities) / len(agents)
 
 
@@ -40,7 +41,7 @@ def nash_welfare(
     X: type[np.ndarray],
     agents: list[BaseAgent],
     items: list[ScheduleItem],
-    current_utilities: list[int] = None,
+    valuations=None,
 ):
     """Compute Nash social welfare (NSW)
 
@@ -58,8 +59,10 @@ def nash_welfare(
     """
     util = 0
     num_zeros = 0
+    if valuations is not None:
+        current_utilities = np.diag(np.dot(valuations, X))
     for agent_index, agent in enumerate(agents):
-        if current_utilities is None:
+        if valuations is None:
             bundle = get_bundle_from_allocation_matrix(X, items, agent_index)
             val = agent.valuation(bundle)
         else:

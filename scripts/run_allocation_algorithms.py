@@ -1,7 +1,8 @@
 import os
 from collections import defaultdict
-
+import numpy as np
 import pandas as pd
+import time
 
 from fair.agent import LegacyStudent
 from fair.allocation import (
@@ -14,12 +15,11 @@ from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from fair.envy import (
     EF_violations,
     EF1_violations,
-    EFX_violations,
+    EF_violations_reponses,
 )
 from fair.feature import Course, Section, Slot, Weekday, slots_for_time_range
 from fair.item import ScheduleItem
 from fair.metrics import (
-    leximin,
     nash_welfare,
     utilitarian_welfare,
     precompute_bundles_valuations,
@@ -29,8 +29,9 @@ from fair.simulation import RenaissanceMan
 
 NUM_STUDENTS = 200
 MAX_COURSES_PER_TOPIC = 5
-LOWER_MAX_COURSES_TOTAL = 2
-UPPER_MAX_COURSES_TOTAL = 5
+LOWER_MAX_COURSES_TOTAL = 3
+UPPER_MAX_COURSES_TOTAL = 6
+SEED = 1
 
 EXCEL_SCHEDULE_PATH = os.path.join(
     os.path.dirname(__file__), "../resources/fall2023schedule.csv"
@@ -91,7 +92,7 @@ for i in range(NUM_STUDENTS):
         section,
         [course_time_constr, course_sect_constr],
         schedule,
-        seed=i,
+        seed=SEED * NUM_STUDENTS + i,
         sparse=SPARSE,
     )
     legacy_student = LegacyStudent(student, student.preferred_courses, course)
@@ -100,92 +101,89 @@ for i in range(NUM_STUDENTS):
     )
     students.append(legacy_student)
 
-# run allocation algorithms and compute metrics
-X_YS = yankee_swap(students, schedule)
-print("YS utilitarian welfare: ", utilitarian_welfare(X_YS, students, schedule))
-print("YS nash welfare: ", nash_welfare(X_YS, students, schedule))
-# print("YS leximin vector: ", leximin((X_YS), students, schedule))
-bundles, valuations = precompute_bundles_valuations(X_YS, students, schedule)
-print(
-    "YS EF violations (total, agents): ",
-    EF_violations(X_YS, students, schedule, valuations),
-)
-print(
-    "YS EF-1 violations (total, agents): ",
-    EF1_violations(X_YS, students, schedule, bundles, valuations),
-)
-print(
-    "YS EF-X violations (total, agents): ",
-    EFX_violations(X_YS, students, schedule, bundles, valuations),
-)
-print(
-    "YS PMMS violations (total, agents): ",
-    PMMS_violations(X_YS, students, schedule, bundles, valuations),
-)
 
-X_SD = serial_dictatorship(students, schedule)
-print("SD utilitarian welfare: ", utilitarian_welfare(X_SD, students, schedule))
-print("SD nash welfare: ", nash_welfare(X_SD, students, schedule))
-# print("SD leximin vector: ", leximin(X_SD, students, schedule))
-bundles, valuations = precompute_bundles_valuations(X_SD, students, schedule)
-print(
-    "SD EF violations (total, agents): ",
-    EF_violations(X_SD, students, schedule, valuations),
-)
-print(
-    "SD EF-1 violations (total, agents): ",
-    EF1_violations(X_SD, students, schedule, bundles, valuations),
-)
-print(
-    "SD EF-X violations (total, agents): ",
-    EFX_violations(X_SD, students, schedule, bundles, valuations),
-)
-print(
-    "SD PMMS violations (total, agents): ",
-    PMMS_violations(X_SD, students, schedule, bundles, valuations),
-)
+def run_allocation_compute_metrics(
+    algorithm, valuations=None, compute_envy_share_metrics=True
+):
+    # run allocation algorithm and compute runtime
+    start = time.time()
+    X = algorithm(students, schedule, valuations=valuations)
+    runtime = time.time() - start
+    print("Running time: ", runtime)
 
-X_RR = round_robin(students, schedule)
-print("RR utilitarian welfare: ", utilitarian_welfare(X_RR, students, schedule))
-print("RR nash welfare: ", nash_welfare(X_RR, students, schedule))
-# print("RR leximin vector: ", leximin(X_RR, students, schedule))
-bundles, valuations = precompute_bundles_valuations(X_RR, students, schedule)
-print(
-    "RR EF violations (total, agents): ",
-    EF_violations(X_RR, students, schedule, valuations),
-)
-print(
-    "RR EF-1 violations (total, agents): ",
-    EF1_violations(X_RR, students, schedule, bundles, valuations),
-)
-print(
-    "RR EF-X violations (total, agents): ",
-    EFX_violations(X_RR, students, schedule, bundles, valuations),
-)
-print(
-    "RR PMMS violations (total, agents): ",
-    PMMS_violations(X_RR, students, schedule, bundles, valuations),
-)
+    # compute welfare metrics
+    print("USW: ", utilitarian_welfare(X, students, schedule, valuations=valuations))
+    zeros, NSW = nash_welfare(X, students, schedule, valuations=valuations)
+    print("NSW: ", NSW)
+    print("Empty Bundles: ", zeros)
+
+    # compute envy and share based metrics
+    if compute_envy_share_metrics:
+        if valuations is None:
+            bundles, current_valuations = precompute_bundles_valuations(
+                X, students, schedule
+            )
+            print(
+                "PMMS violations (count, agents): ",
+                PMMS_violations(X, students, schedule, bundles, current_valuations),
+            )
+            print(
+                "EF violations (count, agents): ",
+                EF_violations(X, students, schedule, current_valuations),
+            )
+            print(
+                "EF-1 violations (count, agents): ",
+                EF1_violations(X, students, schedule, bundles, current_valuations),
+            )
+        else:
+            print(
+                "EF_violations: ",
+                EF_violations_reponses(X, students, schedule, valuations=valuations),
+            )
 
 
-X_ILP = integer_linear_program(students, schedule)
-print("ILP utilitarian welfare: ", utilitarian_welfare(X_ILP, students, schedule))
-print("ILP nash welfare: ", nash_welfare(X_ILP, students, schedule))
-# print("ILP leximin vector: ", leximin(X_ILP, students, schedule))
-bundles, valuations = precompute_bundles_valuations(X_ILP, students, schedule)
+# run allocation algorithms and compute metrics, binary case
+
 print(
-    "ILP EF violations (total, agents): ",
-    EF_violations(X_ILP, students, schedule, valuations),
+    "\n=============================\n=========BINARY CASE=========\n=============================\n"
 )
+
+print("===========INTEGER LINEAR PROGRAM===========")
+run_allocation_compute_metrics(integer_linear_program)
+
+print("============SERIAL DICTATORSHIP=============")
+run_allocation_compute_metrics(serial_dictatorship)
+
+print("================ROUND ROBIN=================")
+run_allocation_compute_metrics(round_robin)
+
+print("================YANKEE SWAP=================")
+run_allocation_compute_metrics(yankee_swap)
+
+
+# run allocation algorithms and compute metrics, non-binary case
+
 print(
-    "ILP EF-1 violations (total, agents): ",
-    EF1_violations(X_ILP, students, schedule, bundles, valuations),
+    "\n=============================\n=======NON-BINARY CASE=======\n=============================\n"
 )
-print(
-    "ILP EF-X violations (total, agents): ",
-    EFX_violations(X_ILP, students, schedule, bundles, valuations),
-)
-print(
-    "ILP PMMS violations (total, agents): ",
-    PMMS_violations(X_ILP, students, schedule, bundles, valuations),
-)
+
+# Build random numerical valuations matrix:
+# preferred items get a random value 1-7, all others get 0
+rng = np.random.default_rng(seed=0)
+valuations = np.zeros((len(students), len(schedule)), dtype=int)
+for i, student in enumerate(students):
+    preferred_idxs = student.get_desired_items_indexes(schedule)
+    valuations[i, preferred_idxs] = rng.integers(1, 8, size=len(preferred_idxs))
+
+# run allocation algorithms and compute metrics for the non-binary case
+print("===========INTEGER LINEAR PROGRAM===========")
+run_allocation_compute_metrics(integer_linear_program, valuations=valuations)
+
+print("============SERIAL DICTATORSHIP=============")
+run_allocation_compute_metrics(serial_dictatorship, valuations=valuations)
+
+print("================ROUND ROBIN=================")
+run_allocation_compute_metrics(round_robin, valuations=valuations)
+
+print("================YANKEE SWAP=================")
+run_allocation_compute_metrics(yankee_swap, valuations=valuations)
