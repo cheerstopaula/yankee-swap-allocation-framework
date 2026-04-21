@@ -1,4 +1,3 @@
-import time
 import copy
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -229,6 +228,7 @@ def add_agent_to_exchange_graph(
     items: list[ScheduleItem],
     agent_picked: int,
     valuations,
+    desired_item_indexes,
 ):
     """Add picked agent to the exchange graph.
 
@@ -247,12 +247,14 @@ def add_agent_to_exchange_graph(
     exchange_graph.add_node("s")
     bundle = get_bundle_from_allocation_matrix(X, items, agent_picked)
     agent = agents[agent_picked]
-    for i in agent.get_desired_items_indexes(items):
+    if desired_item_indexes is None:
+        # this is just for backward compatability - its cached so this dont happen
+        agent_desired_items = agent.get_desired_items_indexes(items)
+    else:
+        agent_desired_items = desired_item_indexes[agent_picked]
+    for i in agent_desired_items:
         g = items[i]
-        if (
-            g not in bundle
-            and agents[agent_picked].marginal_contribution(bundle, g) == 1
-        ):
+        if g not in bundle and agent.marginal_contribution(bundle, g) == 1:
             if valuations is None:
                 exchange_graph.add_edge("s", i, weight=1)
             else:
@@ -271,6 +273,7 @@ def update_exchange_graph(
     path_og: list[int],
     agents_involved: list[int],
     valuations,
+    desired_item_indexes,
 ):
     """Update the exchange graph and edge matrix after the transfers made.
 
@@ -299,7 +302,11 @@ def update_exchange_graph(
         agent = agents[agent_index]
         agent_bundle = get_bundle_indexes_from_allocation_matrix(X, agent_index)
         agent_bundle_items = get_bundle_from_allocation_matrix(X, items, agent_index)
-        agent_desired_items = agent.get_desired_items_indexes(items)
+        if desired_item_indexes is None:
+            # this is just for backward compatability - its cached so this dont happen
+            agent_desired_items = agent.get_desired_items_indexes(items)
+        else:
+            agent_desired_items = desired_item_indexes[agent_index]
         for item1_idx in agent_bundle:
             item1 = items[item1_idx]
             for item2_idx in agent_desired_items:
@@ -478,13 +485,20 @@ def yankee_swap(
     exchange_graph = initialize_exchange_graph(items)
     edge_matrix = [[[] for i in range(m)] for j in range(m)]
     gain_vector = np.zeros([n])
+    desired_item_indexes = [agent.get_desired_items_indexes(items) for agent in agents]
     count = 0
     while len(players) > 0:
         # print("Iteration: %d" % count, end="\r")
         count += 1
         agent_picked = np.argmax(gain_vector)
         exchange_graph = add_agent_to_exchange_graph(
-            X, exchange_graph, agents, items, agent_picked, valuations
+            X,
+            exchange_graph,
+            agents,
+            items,
+            agent_picked,
+            valuations,
+            desired_item_indexes,
         )
         if plot_exchange_graph:
             nx.draw(exchange_graph, with_labels=True)
@@ -511,6 +525,7 @@ def yankee_swap(
                 path,
                 agents_involved,
                 valuations,
+                desired_item_indexes,
             )
             gain_vector[agent_picked] = get_gain_function(
                 X, agents, items, agent_picked, criteria, weights
