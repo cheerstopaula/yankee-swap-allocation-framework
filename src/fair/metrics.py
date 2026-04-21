@@ -225,11 +225,13 @@ def pairwise_maximin_share(
     """
 
     PMMS = {}
-
-    bundle_1 = copy.deepcopy([sched for sched in current_bundle_1])
+    
+    # bundle_1 = copy.deepcopy([sched for sched in current_bundle_1])
+    bundle_1 = [copy.copy(sched) for sched in current_bundle_1]
     for sched in bundle_1:
         sched.capacity = 1
-    bundle_2 = copy.deepcopy([sched for sched in current_bundle_2])
+    # bundle_2 = copy.deepcopy([sched for sched in current_bundle_2])
+    bundle_2 = [copy.copy(sched) for sched in current_bundle_2]
     for sched in bundle_2:
         sched.capacity = 1
 

@@ -378,7 +378,8 @@ def serial_dictatorship(
         m = len(items)
         X = np.zeros([m, n], dtype=int)
         # Make deep copy of the schedule to alter capacities
-        schedule_copy = copy.deepcopy(items)
+        # schedule_copy = copy.deepcopy(items)
+        schedule_copy = [copy.copy(item) for item in items]
 
         for student_idx in range(len(agents)):
 

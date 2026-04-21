@@ -168,8 +168,9 @@ class ConstraintSatifactionValuation(MemoableValuation):
         """
         if self.independent(bundle):
             return len(bundle)
-
-        bundle = list(deepcopy(bundle))
+        
+        # bundle = list(deepcopy(bundle))
+        bundle = list(bundle)
         indep = []
         while len(bundle) > 0:
             cand = bundle.pop()
@@ -184,7 +185,8 @@ class ConstraintSatifactionValuation(MemoableValuation):
         Returns:
             ConstraintSatifactionValuation: Valuation with constraints compiled
         """
-        constraints = deepcopy(self.constraints)
+        # constraints = deepcopy(self.constraints)
+        constraints = list(self.constraints)
         if len(constraints) == 0:
             return self
 
