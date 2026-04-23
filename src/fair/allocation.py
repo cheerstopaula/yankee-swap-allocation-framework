@@ -423,12 +423,13 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
     players = list(range(n))
     X = initialize_allocation_matrix(items, agents)
     gain_vector = np.zeros([n])
+    desired_item_indexes = [agent.get_desired_items_indexes(items) for agent in agents]
     while len(players) > 0:
         player = np.argmax(gain_vector)
         val = 0
         current_item = []
         agent = agents[player]
-        desired_items = agent.get_desired_items_indexes(items)
+        desired_items = desired_item_indexes[player]
         bundle = get_bundle_from_allocation_matrix(X, items, player)
         for item in desired_items:
             if X[item, len(agents)] > 0:
