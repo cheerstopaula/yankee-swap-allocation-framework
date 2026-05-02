@@ -42,9 +42,8 @@ def exchange_contribution(
 
     return valuation.value(bundle_list) == base_val
 
-def marginal_contribution(
-    valuation: RankValuation, bundle: set, item: BaseItem
-):
+
+def marginal_contribution(valuation: RankValuation, bundle: set, item: BaseItem):
     """Marginal change in utility
 
     Compute the marginal utility the agent gets form adding a particular item to a particular bundle of items
