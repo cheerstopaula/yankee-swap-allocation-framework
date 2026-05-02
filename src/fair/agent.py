@@ -9,7 +9,7 @@ from .valuation import RankValuation, UniqueItemsValuation
 
 def exchange_contribution(
     valuation: RankValuation,
-    bundle: List[BaseItem],
+    bundle: set,
     og_item: BaseItem,
     new_item: BaseItem,
 ):
@@ -31,31 +31,19 @@ def exchange_contribution(
     if og_item == new_item:
         return False
 
-    for i in range(len(bundle)):
-        if bundle[i] == new_item:
-            return False
-
-    T0 = bundle.copy()
-    index = []
-    for i in range(len(T0)):
-        if T0[i] == og_item:
-            index.append(i)
-    if len(index) == 0:
+    if og_item not in bundle or new_item in bundle:
         return False
 
-    T0.pop(index[0])
-    T0.append(new_item)
+    base_val = valuation.value(list(bundle))
 
-    og_val = valuation.value(bundle)
-    new_val = valuation.value(T0)
-    if og_val == new_val:
-        return True
-    else:
-        return False
+    bundle_list = list(bundle)
+    bundle_list.remove(og_item)
+    bundle_list.append(new_item)
 
+    return valuation.value(bundle_list) == base_val
 
 def marginal_contribution(
-    valuation: RankValuation, bundle: List[BaseItem], item: BaseItem
+    valuation: RankValuation, bundle: set, item: BaseItem
 ):
     """Marginal change in utility
 
@@ -72,12 +60,12 @@ def marginal_contribution(
     """
     if item in bundle:
         return 0
-    T = bundle.copy()
-    current_val = valuation.value(T)
-    T.append(item)
-    new_val = valuation.value(T)
 
-    return new_val - current_val
+    base_value = valuation.value(list(bundle))
+    new_bundle = list(bundle)
+    new_bundle.append(item)
+
+    return valuation.value(new_bundle) - base_value
 
 
 class BaseAgent:
