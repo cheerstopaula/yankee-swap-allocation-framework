@@ -150,6 +150,15 @@ class LegacyStudent:
         """
         return exchange_contribution(self.student.valuation, bundle, og_item, new_item)
 
+    def compute_bundle_Axs(self, bundle):
+        return self.student.valuation.compute_Axs(bundle)
+
+    def Axs_minus_item(self, Axs, item):
+        return self.student.valuation.Axs_minus_item(Axs, item.index)
+
+    def feasible_swap(self, Axs_base, item_in):
+        return self.student.valuation.is_feasible_swap(Axs_base, item_in.index)
+
     def get_desired_items_indexes(self, items: List[BaseItem]):
         """Return subset of indices from items that are preferred by the student
 

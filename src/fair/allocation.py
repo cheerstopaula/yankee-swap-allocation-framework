@@ -178,7 +178,7 @@ def update_allocation(
         last_item = path.pop(len(path) - 1)
         if len(path) > 0:
             next_to_last_item = path[-1]
-            current_agent = list(edge_matrix[next_to_last_item][last_item])[0]
+            current_agent = edge_matrix[next_to_last_item][last_item][0]
             agents_involved.append(current_agent)
             X[last_item, current_agent] = 1
             X[next_to_last_item, current_agent] = 0
@@ -188,7 +188,7 @@ def update_allocation(
             bundle_items[current_agent].remove(items[next_to_last_item])
             for item_index in desired_item_indexes[current_agent]:
                 if current_agent in edge_matrix[next_to_last_item][item_index]:
-                    edge_matrix[next_to_last_item][item_index].discard(current_agent)
+                    edge_matrix[next_to_last_item][item_index].remove(current_agent)
                     if (
                         len(edge_matrix[next_to_last_item][item_index]) == 0
                         and edges[next_to_last_item][item_index]
@@ -309,36 +309,43 @@ def update_exchange_graph(
         agent = agents[agent_index]
         agent_bundle = bundles[agent_index]
         agent_bundle_items = bundle_items[agent_index]
-        if desired_item_indexes is None:
-            # this is just for backward compatability - its cached so this dont happen
-            agent_desired_items = agent.get_desired_items_indexes(items)
-        else:
-            agent_desired_items = desired_item_indexes[agent_index]
+        agent_desired_items = desired_item_indexes[agent_index]
+        Axs = agent.compute_bundle_Axs(agent_bundle_items)
         for item1_idx in agent_bundle:
             item1 = items[item1_idx]
+            Axs_base = agent.Axs_minus_item(Axs, item1)
             for item2_idx in agent_desired_items:
+                if item1_idx == item2_idx:
+                    continue
                 item2 = items[item2_idx]
-                if item1_idx != item2_idx:
-                    if agent_index in edge_matrix[item1_idx][item2_idx]:
-                        if not agent.exchange_contribution(
-                            agent_bundle_items, item1, item2
-                        ):
-                            edge_matrix[item1_idx][item2_idx].discard(agent_index)
-                            if (
-                                len(edge_matrix[item1_idx][item2_idx]) == 0
-                                and edges[item1_idx][item2_idx]
-                            ):
+                if item2_idx in agent_bundle:
+                    # item2 is already owned — swap impossible, remove stale edge
+                    if (
+                        edges[item1_idx][item2_idx]
+                        and agent_index in edge_matrix[item1_idx][item2_idx]
+                    ):
+                        edge_matrix[item1_idx][item2_idx].remove(agent_index)
+                        if len(edge_matrix[item1_idx][item2_idx]) == 0:
+                            exchange_graph.remove_edge(item1_idx, item2_idx)
+                            edges[item1_idx][item2_idx] = False
+                else:
+                    can_swap = agent.feasible_swap(Axs_base, item2)
+                    if (
+                        edges[item1_idx][item2_idx]
+                        and agent_index in edge_matrix[item1_idx][item2_idx]
+                    ):
+                        if not can_swap:
+                            edge_matrix[item1_idx][item2_idx].remove(agent_index)
+                            if len(edge_matrix[item1_idx][item2_idx]) == 0:
                                 exchange_graph.remove_edge(item1_idx, item2_idx)
                                 edges[item1_idx][item2_idx] = False
                     else:
-                        if agent.exchange_contribution(
-                            agent_bundle_items, item1, item2
-                        ):
+                        if can_swap:
                             if valuations is None or (
                                 valuations[agent_index, item1_idx]
                                 == valuations[agent_index, item2_idx]
                             ):
-                                edge_matrix[item1_idx][item2_idx].add(agent_index)
+                                edge_matrix[item1_idx][item2_idx].append(agent_index)
                                 exchange_graph.add_edge(item1_idx, item2_idx, weight=1)
                                 edges[item1_idx][item2_idx] = True
     return exchange_graph, edge_matrix, edges
@@ -498,7 +505,7 @@ def yankee_swap(
     players = list(range(n))
     X = initialize_allocation_matrix(items, agents)
     exchange_graph = initialize_exchange_graph(items)
-    edge_matrix = [[set() for _ in range(m)] for _ in range(m)]
+    edge_matrix = [[[] for _ in range(m)] for _ in range(m)]
     edges = [[False for _ in range(m)] for _ in range(m)]
     gain_vector = np.zeros([n])
     desired_item_indexes = [agent.get_desired_items_indexes(items) for agent in agents]
