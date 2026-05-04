@@ -1,9 +1,11 @@
 from copy import deepcopy
 from typing import List
 
+import numpy as np
+
 from fair.item import BaseItem
 
-from .constraint import BaseConstraint
+from .constraint import BaseConstraint, indicator
 
 
 class BaseValuation:
@@ -195,6 +197,27 @@ class ConstraintSatifactionValuation(MemoableValuation):
             constraint += constraints.pop()
 
         return ConstraintSatifactionValuation([constraint.prune()])
+
+    def compute_Axs(self, bundle):
+        return [c.A @ indicator(bundle, c.extent, c._sparse) for c in self.constraints]
+
+    def Axs_minus_item(self, Axs, item_idx):
+        return [
+            Ax - c.A[:, item_idx : item_idx + 1] for c, Ax in zip(self.constraints, Axs)
+        ]
+
+    def is_feasible_swap(self, Axs_base, item_in_idx):
+        for c, Ax in zip(self.constraints, Axs_base):
+            Ax_new = Ax + c.A[:, item_in_idx : item_in_idx + 1]
+            if c._sparse:
+                less_than = (Ax_new < c.b).toarray().flatten()
+                equal_to = ~(Ax_new != c.b).toarray().flatten()
+                if not np.prod([lt or eq for lt, eq in zip(less_than, equal_to)]):
+                    return False
+            else:
+                if not bool(np.prod(Ax_new <= c.b)):
+                    return False
+        return True
 
 
 class UniqueItemsValuation:
