@@ -381,20 +381,28 @@ def serial_dictatorship(
     """
     if valuations is None:
         X = initialize_allocation_matrix(items, agents)
-        agent_index = 0
+        capacities = X[:, len(agents)]
+
         for agent_index, agent in enumerate(agents):
+
             bundle = []
             desired_items = agent.get_desired_items_indexes(items)
-            for item in desired_items:
-                if X[item, len(agents)] > 0:
-                    current_val = agent.valuation(bundle)
-                    new_bundle = bundle.copy()
-                    new_bundle.append(items[item])
-                    new_valuation = agent.valuation(new_bundle)
-                    if new_valuation > current_val:
-                        X[item, agent_index] = 1
-                        X[item, len(agents)] -= 1
-                        bundle = new_bundle.copy()
+            for item_idx in desired_items:
+
+                if capacities[item_idx] <= 0:
+                    continue
+
+                item_obj = items[item_idx]
+
+                # avoid recomputing full valuation
+                if agent.marginal_contribution(bundle, item_obj) > 0:
+
+                    X[item_idx, agent_index] = 1
+
+                    capacities[item_idx] -= 1
+
+                    bundle.append(item_obj)
+
         return X
     else:
         # Initialize allocation
@@ -402,22 +410,15 @@ def serial_dictatorship(
         m = len(items)
         X = np.zeros([m, n], dtype=int)
         # Make deep copy of the schedule to alter capacities
-        # schedule_copy = copy.deepcopy(items)
         schedule_copy = [copy.copy(item) for item in items]
 
         for student_idx in range(len(agents)):
-
             small_ilp_students = agents[student_idx : student_idx + 1]
-
             c_small_ilp = np.array([valuations[student_idx]])
-
             orig_students = [student.student for student in small_ilp_students]
-
             program = StudentAllocationProgram(orig_students, schedule_copy).compile()
             opt_alloc = program.formulateUSW(valuations=c_small_ilp.flatten()).solve()
-
             X[:, student_idx] = opt_alloc
-
             for i, take in enumerate(opt_alloc):
                 if take == 1:
                     schedule_copy[i].capacity -= 1
@@ -439,41 +440,70 @@ def round_robin(agents: list[BaseAgent], items: list[ScheduleItem], valuations=N
     n = len(agents)
     players = list(range(n))
     X = initialize_allocation_matrix(items, agents)
-    gain_vector = np.zeros([n])
+    capacities = X[:, n]
+    available_items = set(np.where(capacities > 0)[0])
+    gain_vector = np.zeros(n)
     desired_item_indexes = [agent.get_desired_items_indexes(items) for agent in agents]
-    while len(players) > 0:
+
+    bundle_indexes = [set() for _ in agents]
+    bundle_items = [list() for _ in agents]
+
+    while players:
         player = np.argmax(gain_vector)
-        val = 0
-        current_item = []
         agent = agents[player]
         desired_items = desired_item_indexes[player]
-        bundle = get_bundle_from_allocation_matrix(X, items, player)
-        for item in desired_items:
-            if X[item, len(agents)] > 0:
-                if valuations is None:
-                    current_val = agent.marginal_contribution(bundle, items[item])
-                else:
-                    current_val = (
-                        agent.marginal_contribution(bundle, items[item])
-                        * valuations[player, item]
+        bundle = bundle_items[player]
+        best_item = None
+        best_val = 0
+
+        for item_idx in desired_items:
+            if item_idx not in available_items:
+                continue
+
+            item_obj = items[item_idx]
+
+            if valuations is None:
+                current_val = agent.marginal_contribution(
+                    bundle,
+                    item_obj,
+                )
+
+            else:
+                current_val = (
+                    agent.marginal_contribution(
+                        bundle,
+                        item_obj,
                     )
-                if current_val > val:
-                    current_item.clear()
-                    current_item.append(item)
-                    val = current_val
-        if len(current_item) > 0:
-            X[current_item[0], player] = 1
-            X[current_item[0], len(agents)] -= 1
+                    * valuations[player, item_idx]
+                )
+
+            if current_val > best_val:
+                best_val = current_val
+                best_item = item_idx
+
+        if best_item is not None:
+            X[best_item, player] = 1
+            capacities[best_item] -= 1
+            if capacities[best_item] == 0:
+                available_items.remove(best_item)
+
+            # Update maintained bundles
+            bundle_indexes[player].add(best_item)
+            bundle_items[player].append(items[best_item])
+
+            # Update gain
             gain_vector[player] = get_gain_function(
                 agents[player],
                 player,
-                get_bundle_from_allocation_matrix(X, items, player),
+                bundle_items[player],
                 criteria="LorenzDominance",
                 weights=[],
             )
+
         else:
             players.remove(player)
             gain_vector[player] = float("-inf")
+
     return X
 
 
