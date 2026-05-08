@@ -5,7 +5,7 @@ from fair.allocation import yankee_swap
 from fair.constraint import PreferenceConstraint
 from fair.feature import Course
 from fair.item import ScheduleItem
-from fair.metrics import utilitarian_welfare
+from fair.welfare_metrics import utilitarian_welfare
 from fair.optimization import IntegerLinearProgram, StudentAllocationProgram
 from fair.simulation import RenaissanceMan
 from fair.valuation import ConstraintSatifactionValuation
