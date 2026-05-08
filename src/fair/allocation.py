@@ -382,27 +382,18 @@ def serial_dictatorship(
     if valuations is None:
         X = initialize_allocation_matrix(items, agents)
         capacities = X[:, len(agents)]
-
         for agent_index, agent in enumerate(agents):
-
             bundle = []
             desired_items = agent.get_desired_items_indexes(items)
             for item_idx in desired_items:
-
                 if capacities[item_idx] <= 0:
                     continue
 
                 item_obj = items[item_idx]
-
-                # avoid recomputing full valuation
                 if agent.marginal_contribution(bundle, item_obj) > 0:
-
                     X[item_idx, agent_index] = 1
-
                     capacities[item_idx] -= 1
-
                     bundle.append(item_obj)
-
         return X
     else:
         # Initialize allocation

@@ -15,7 +15,9 @@ from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
 from fair.envy import (
     EF_violations,
     EF1_violations,
-    EF_violations_reponses,
+    EF_violations_responses,
+    EF1_violations_responses,
+    PMMS_violations_responses,
 )
 from fair.feature import Course, Section, Slot, Weekday, slots_for_time_range
 from fair.item import ScheduleItem
@@ -27,7 +29,7 @@ from fair.metrics import (
 )
 from fair.simulation import RenaissanceMan
 
-NUM_STUDENTS = 200
+NUM_STUDENTS = 1000
 MAX_COURSES_PER_TOPIC = 5
 LOWER_MAX_COURSES_TOTAL = 3
 UPPER_MAX_COURSES_TOTAL = 6
@@ -36,7 +38,7 @@ SEED = 1
 EXCEL_SCHEDULE_PATH = os.path.join(
     os.path.dirname(__file__), "../resources/fall2023schedule.csv"
 )
-CAPACITY_SCALE_FACTOR = 0.1
+CAPACITY_SCALE_FACTOR = 0.5
 
 SPARSE = False
 FIND_OPTIMAL = True
@@ -136,29 +138,37 @@ def run_allocation_compute_metrics(
                 EF1_violations(X, students, schedule, bundles, current_valuations),
             )
         else:
-            print(
-                "EF_violations: ",
-                EF_violations_reponses(X, students, schedule, valuations=valuations),
+            total_envy, num_envious, EF_matrix, memo = EF_violations_responses(
+                X, students, schedule, valuations
             )
+            print("EF violations (count, agents): ", total_envy, num_envious)
+            total_ef1, num_ef1_envious, _, _ = EF1_violations_responses(
+                X, students, schedule, valuations, memo=memo, EF_matrix=EF_matrix
+            )
+            print("EF-1 violations (count, agents): ", total_ef1, num_ef1_envious)
+            total_pmms, num_pmms, _ = PMMS_violations_responses(
+                X, students, schedule, valuations, EF_matrix=EF_matrix, memo=memo
+            )
+            print("PMMS violations (count, agents): ", total_pmms, num_pmms)
 
 
 # run allocation algorithms and compute metrics, binary case
 
 print(
-    "\n=============================\n=========BINARY CASE=========\n=============================\n"
+    # "\n=============================\n=========BINARY CASE=========\n=============================\n"
 )
 
-print("===========INTEGER LINEAR PROGRAM===========")
-run_allocation_compute_metrics(integer_linear_program)
+# print("===========INTEGER LINEAR PROGRAM===========")
+# run_allocation_compute_metrics(integer_linear_program)
 
-print("============SERIAL DICTATORSHIP=============")
-run_allocation_compute_metrics(serial_dictatorship)
+# print("============SERIAL DICTATORSHIP=============")
+# run_allocation_compute_metrics(serial_dictatorship)
 
-print("================ROUND ROBIN=================")
-run_allocation_compute_metrics(round_robin)
+# print("================ROUND ROBIN=================")
+# run_allocation_compute_metrics(round_robin)
 
-print("================YANKEE SWAP=================")
-run_allocation_compute_metrics(yankee_swap)
+# print("================YANKEE SWAP=================")
+# run_allocation_compute_metrics(yankee_swap)
 
 
 # run allocation algorithms and compute metrics, non-binary case
