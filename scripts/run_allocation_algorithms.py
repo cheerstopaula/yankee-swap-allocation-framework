@@ -12,20 +12,20 @@ from fair.allocation import (
     integer_linear_program,
 )
 from fair.constraint import CourseTimeConstraint, MutualExclusivityConstraint
-from fair.envy import (
+from fair.fairness_metrics import (
     EF_violations,
     EF1_violations,
     EF_violations_responses,
     EF1_violations_responses,
     PMMS_violations_responses,
+    precompute_bundles_valuations,
+    PMMS_violations,
 )
 from fair.feature import Course, Section, Slot, Weekday, slots_for_time_range
 from fair.item import ScheduleItem
-from fair.metrics import (
+from fair.welfare_metrics import (
     nash_welfare,
     utilitarian_welfare,
-    precompute_bundles_valuations,
-    PMMS_violations,
 )
 from fair.simulation import RenaissanceMan
 
