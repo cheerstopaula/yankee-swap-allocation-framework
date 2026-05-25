@@ -242,8 +242,8 @@ def EF_violations_responses(
         memo (dict, optional): shared ILP cache; pass in to reuse across calls
 
     Returns:
-        Without student_status_map: (total_envy, EF_matrix, memo)
-        With student_status_map:    (total_envy, status_envy, downward_envy, EF_matrix, memo)
+        Without student_status_map: (total_envy, num_envious, EF_matrix, memo)
+        With student_status_map:    (total_envy, num_envious, status_envy, num_status_envious, downward_envy, num_downward_envious, EF_matrix, memo)
     """
     if memo is None:
         memo = {}
@@ -277,10 +277,14 @@ def EF_violations_responses(
     statuses = np.array([student_status_map[a] for a in agents])
     si = statuses[:, None]
     sj = statuses[None, :]
-    status_envy = int(np.sum(envy_mask & (si == sj)))
-    downward_envy = int(np.sum(envy_mask & (si > sj)))
+    status_mask = envy_mask & (si == sj)
+    downward_mask = envy_mask & (si > sj)
+    status_envy = int(np.sum(status_mask))
+    num_status_envious = int(np.sum(np.any(status_mask, axis=1)))
+    downward_envy = int(np.sum(downward_mask))
+    num_downward_envious = int(np.sum(np.any(downward_mask, axis=1)))
 
-    return total_envy, num_envious, status_envy, downward_envy, EF_matrix, memo
+    return total_envy, num_envious, status_envy, num_status_envious, downward_envy, num_downward_envious, EF_matrix, memo
 
 
 def EF1_violations_responses(
@@ -312,7 +316,7 @@ def EF1_violations_responses(
 
     Returns:
         Without student_status_map: (total_ef1, num_ef1_envious, EF1_matrix, memo)
-        With student_status_map:    (total_ef1, num_ef1_envious, status_ef1, downward_ef1, EF1_matrix, memo)
+        With student_status_map:    (total_ef1, num_ef1_envious, status_ef1, num_status_ef1_envious, downward_ef1, num_downward_ef1_envious, EF1_matrix, memo)
     """
     if memo is None:
         memo = {}
@@ -366,10 +370,14 @@ def EF1_violations_responses(
     si = statuses[:, None]
     sj = statuses[None, :]
     ef1_mask = EF1_matrix > 0
-    status_ef1 = int(np.sum(ef1_mask & (si == sj)))
-    downward_ef1 = int(np.sum(ef1_mask & (si > sj)))
+    status_ef1_mask = ef1_mask & (si == sj)
+    downward_ef1_mask = ef1_mask & (si > sj)
+    status_ef1 = int(np.sum(status_ef1_mask))
+    num_status_ef1_envious = int(np.sum(np.any(status_ef1_mask, axis=1)))
+    downward_ef1 = int(np.sum(downward_ef1_mask))
+    num_downward_ef1_envious = int(np.sum(np.any(downward_ef1_mask, axis=1)))
 
-    return total_ef1, num_ef1_envious, status_ef1, downward_ef1, EF1_matrix, memo
+    return total_ef1, num_ef1_envious, status_ef1, num_status_ef1_envious, downward_ef1, num_downward_ef1_envious, EF1_matrix, memo
 
 
 # FUNCTIONS TO COMPUTE PAIRWISE MAXIMIN SHARE
@@ -468,6 +476,7 @@ def PMMS_violations(
     items: list[ScheduleItem],
     bundles: list[list[ScheduleItem]] | None = None,
     valuations: type[np.ndarray] | None = None,
+    student_status_map: dict = None,
 ):
     """Compute number of violations of the Pairwise Maximin Share (PMMS) for an allocation X
 
@@ -481,10 +490,11 @@ def PMMS_violations(
          schedule (list[ScheduleItem]): Items from class BaseItem
          bundles (list(list[ScheduleItem])): List of all agents bundles
          valuations (type[np.ndarray]): Valuations of all agents for all bundles under X
+         student_status_map (dict, optional): maps agent -> status int for stratified counts
 
      Returns:
-         int: Number of PMMS violations
-         int: Number of agents who did not receive their PMMS in every comparison
+         Without student_status_map: (total_violations, num_violating_agents)
+         With student_status_map:    (total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating)
     """
     if valuations is None:
         bundles, valuations = precompute_bundles_valuations(X, agents, items)
@@ -505,7 +515,24 @@ def PMMS_violations(
                 PMMS = pairwise_maximin_share(student_2, student_1, bundle_2, bundle_1)
                 PMMS_matrix[j, i] = valuations[j, j] - PMMS[student_2]
 
-    return np.sum(PMMS_matrix < 0), np.sum(np.any(PMMS_matrix < 0, axis=1))
+    violation_mask = PMMS_matrix < 0
+    total_violations = int(np.sum(violation_mask))
+    num_violating_agents = int(np.sum(np.any(violation_mask, axis=1)))
+
+    if student_status_map is None:
+        return total_violations, num_violating_agents
+
+    statuses = np.array([student_status_map[a] for a in agents])
+    si = statuses[:, None]
+    sj = statuses[None, :]
+    status_vmask = violation_mask & (si == sj)
+    downward_vmask = violation_mask & (si > sj)
+    status_violations = int(np.sum(status_vmask))
+    num_status_violating = int(np.sum(np.any(status_vmask, axis=1)))
+    downward_violations = int(np.sum(downward_vmask))
+    num_downward_violating = int(np.sum(np.any(downward_vmask, axis=1)))
+
+    return total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating
 
 
 # for the non-banary case
@@ -625,6 +652,7 @@ def PMMS_violations_responses(
     valuations: np.ndarray,
     bundles: list[list[ScheduleItem]] | None = None,
     EF_matrix: np.ndarray | None = None,
+    student_status_map: dict = None,
     memo: dict = None,
 ):
     """Compute exact PMMS violations using best-response values (non-binary case).
@@ -653,10 +681,12 @@ def PMMS_violations_responses(
         valuations (np.ndarray): agent x item valuation matrix
         bundles (list[list[ScheduleItem]], optional): precomputed bundles; derived if None
         EF_matrix (np.ndarray, optional): from EF_violations_responses; computed if None
+        student_status_map (dict, optional): maps agent -> status int for stratified counts
         memo (dict, optional): shared ILP cache; populated and returned for further reuse
 
     Returns:
-        (total_pmms_violations, num_pmms_violating_agents, memo)
+        Without student_status_map: (total_violations, num_violating_agents, memo)
+        With student_status_map:    (total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating, memo)
     """
     if memo is None:
         memo = {}
@@ -694,7 +724,21 @@ def PMMS_violations_responses(
                 if current_utilities[a] < pmms:
                     PMMS_matrix[a, b] = current_utilities[a] - pmms
 
-    total_violations = int(np.sum(PMMS_matrix < 0))
-    num_violating_agents = int(np.sum(np.any(PMMS_matrix < 0, axis=1)))
+    pmms_violation_mask = PMMS_matrix < 0
+    total_violations = int(np.sum(pmms_violation_mask))
+    num_violating_agents = int(np.sum(np.any(pmms_violation_mask, axis=1)))
 
-    return total_violations, num_violating_agents, memo
+    if student_status_map is None:
+        return total_violations, num_violating_agents, memo
+
+    statuses = np.array([student_status_map[a] for a in agents])
+    si = statuses[:, None]
+    sj = statuses[None, :]
+    status_vmask = pmms_violation_mask & (si == sj)
+    downward_vmask = pmms_violation_mask & (si > sj)
+    status_violations = int(np.sum(status_vmask))
+    num_status_violating = int(np.sum(np.any(status_vmask, axis=1)))
+    downward_violations = int(np.sum(downward_vmask))
+    num_downward_violating = int(np.sum(np.any(downward_vmask, axis=1)))
+
+    return total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating, memo
