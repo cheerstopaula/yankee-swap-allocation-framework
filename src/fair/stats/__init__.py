@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 from scipy import stats
 from scipy.stats._result_classes import ECDFResult
@@ -21,14 +19,8 @@ def bernoulli_samples(
     """
     rng = np.random.default_rng(None) if rng is None else rng
     theta = theta.flatten()
-    m = len(theta)
 
-    return np.hstack(
-        [
-            stats.bernoulli(theta[i]).rvs(n, random_state=rng).reshape((n, 1))
-            for i in range(m)
-        ]
-    )
+    return (rng.random((n, len(theta))) < theta).astype(int)
 
 
 def binary(integer: int, n: int) -> np.ndarray:
