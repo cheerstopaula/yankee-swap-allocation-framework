@@ -220,15 +220,14 @@ class PreferenceConstraint(LinearConstraint):
         A = dok_array((rows, cols), dtype=np.int_)
         b = dok_array((rows, 1), dtype=np.int_)
 
-        item_index = {
-            tuple(item.value(f) for f in preferred_features): item.index
-            for item in schedule
-        }
+        item_indices = {}
+        for item in schedule:
+            key = tuple(item.value(f) for f in preferred_features)
+            item_indices.setdefault(key, []).append(item.index)
 
         for i in range(rows):
             for values in preferred_values[i]:
-                idx = item_index.get(tuple(values))
-                if idx is not None:
+                for idx in item_indices.get(tuple(values), []):
                     A[i, idx] = 1
             b[i, 0] = limits[i]
 
