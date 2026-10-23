@@ -284,7 +284,16 @@ def EF_violations_responses(
     downward_envy = int(np.sum(downward_mask))
     num_downward_envious = int(np.sum(np.any(downward_mask, axis=1)))
 
-    return total_envy, num_envious, status_envy, num_status_envious, downward_envy, num_downward_envious, EF_matrix, memo
+    return (
+        total_envy,
+        num_envious,
+        status_envy,
+        num_status_envious,
+        downward_envy,
+        num_downward_envious,
+        EF_matrix,
+        memo,
+    )
 
 
 def EF1_violations_responses(
@@ -377,7 +386,16 @@ def EF1_violations_responses(
     downward_ef1 = int(np.sum(downward_ef1_mask))
     num_downward_ef1_envious = int(np.sum(np.any(downward_ef1_mask, axis=1)))
 
-    return total_ef1, num_ef1_envious, status_ef1, num_status_ef1_envious, downward_ef1, num_downward_ef1_envious, EF1_matrix, memo
+    return (
+        total_ef1,
+        num_ef1_envious,
+        status_ef1,
+        num_status_ef1_envious,
+        downward_ef1,
+        num_downward_ef1_envious,
+        EF1_matrix,
+        memo,
+    )
 
 
 # FUNCTIONS TO COMPUTE PAIRWISE MAXIMIN SHARE
@@ -532,7 +550,14 @@ def PMMS_violations(
     downward_violations = int(np.sum(downward_vmask))
     num_downward_violating = int(np.sum(np.any(downward_vmask, axis=1)))
 
-    return total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating
+    return (
+        total_violations,
+        num_violating_agents,
+        status_violations,
+        num_status_violating,
+        downward_violations,
+        num_downward_violating,
+    )
 
 
 # for the non-banary case
@@ -741,4 +766,12 @@ def PMMS_violations_responses(
     downward_violations = int(np.sum(downward_vmask))
     num_downward_violating = int(np.sum(np.any(downward_vmask, axis=1)))
 
-    return total_violations, num_violating_agents, status_violations, num_status_violating, downward_violations, num_downward_violating, memo
+    return (
+        total_violations,
+        num_violating_agents,
+        status_violations,
+        num_status_violating,
+        downward_violations,
+        num_downward_violating,
+        memo,
+    )
