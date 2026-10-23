@@ -54,3 +54,23 @@ Format and docstring settings are committed to the repository in `.vscode/settin
 ```bash
 pytest
 ```
+
+## Citing
+
+If you use this software, please cite the paper that introduces the dataset and the software:
+
+> George Bissias, Cyrus Cousins, Paula Navarrete Diaz, and Yair Zick. *Deploying Fair and Efficient Course Allocation Mechanisms*. arXiv:2502.10592, 2025.
+
+```bibtex
+@misc{bissias2025deploying,
+  title         = {Deploying Fair and Efficient Course Allocation Mechanisms},
+  author        = {Bissias, George and Cousins, Cyrus and Navarrete Diaz, Paula and Zick, Yair},
+  year          = {2025},
+  eprint        = {2502.10592},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.GT},
+  url           = {https://arxiv.org/abs/2502.10592}
+}
+```
+
+This version of the paper predates the extension to non-binary preferences; we will update this reference when the new version is available.
