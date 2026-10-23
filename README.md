@@ -73,4 +73,4 @@ If you use this software, please cite the paper that introduces the dataset and 
 }
 ```
 
-This version of the paper predates the extension to non-binary preferences; we will update this reference when the new version is available.
+This is the latest public version of the manuscript. We are working on an updated version that extends the methods to non-binary preferences, and will update this reference soon.
